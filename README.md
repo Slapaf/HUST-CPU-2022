@@ -17,7 +17,7 @@
 
 - 对于 MIDI 键盘组件，原作者在 [README](Reference\MIDIkeyboard-master\README.md) 中有较为详细的讲解，可以自行尝试。
 
-- 对于汇编器脚本，点击op.bat文件，输入.asm文件的文件名即可(无需添加后缀)。
+- 对于汇编器脚本，点击 `op.bat` 文件，输入 .asm 文件的文件名即可(无需添加后缀)。
   
 ## 任务计划
 
