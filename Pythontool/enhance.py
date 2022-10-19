@@ -41,7 +41,7 @@ def on_key_press(key):
         mouse.click(pynput.mouse.Button.left)  # 通过模拟点击鼠标以执行鼠标的线程,然后退出监听.
         return False  # 监听函数return False表示退出监听12
     command_list.append((
-        "press",  # 操作模式
+        "key-press",  # 操作模式
         (str(key).strip("'"), ),
         # 具体按下的键,传进来的参数并不是一个字符串,而是一个对象,如果按下的是普通的键,会记录下键对应的字符,否则会使一个"Key.xx"的字符串
         time.time() - startTime  # 操作距离程序开始运行的秒数
@@ -55,10 +55,34 @@ def on_key_release(key):
         key (_type_): _description_
     """
     command_list.append((
-        "release",  # 操作模式
+        "key-release",  # 操作模式
         (str(key).strip("'"), ),  # 键信息,参见on_key_press中的相同部分
         time.time() - startTime  # 操作距离程序开始运行的秒数
     ))
+
+
+def on_mouse_press(x, y, button):
+    """当鼠标按下时记录
+
+    Args:
+        x (_type_): _description_
+        y (_type_): _description_
+        button (_type_): _description_
+    """
+    command_list.append(
+        ("mouse-press", (x, y, str(button)), time.time() - startTime))
+
+
+def on_mouse_release(x, y, button):
+    """当鼠标释放时记录
+
+    Args:
+        x (_type_): _description_
+        y (_type_): _description_
+        button (_type_): _description_
+    """
+    command_list.append(
+        ("mouse-release", (x, y, str(button)), time.time() - startTime))
 
 
 def on_mouse_click(x, y, button, pressed):
@@ -76,30 +100,37 @@ def on_mouse_click(x, y, button, pressed):
     global mouse_x_old, mouse_y_old, mouse_t_old
     if not isRunning:  # 如果已经不在运行了
         return False  # 退出监听
-    if not pressed:  # 如果是松开事件
-        return True  # 不记录
-    # ? 两次点击同一位置
-    if mouse_x_old == x and mouse_y_old == y:
-        # 如果两次点击的时间间隔小于0.3秒就会判断为双击 否则就是单击
-        if time.time() - mouse_t_old > 0.3:  # * 单击
-            command_list.append((
-                "click",  # 操作模式
-                (x, y, str(button)),  # 分别是鼠标的坐标和按下的按键
-                time.time() - startTime  # 操作距离程序开始运行的秒数
-            ))
-        else:  # * 双击
-            command_list.pop(0)  # 删除前一个
-            command_list.append((
-                "double-click",  # 操作模式
-                (x, y, str(button)),  # 分别是鼠标的坐标和按下的按键
-                time.time() - startTime  # 操作距离程序开始运行的秒数
-            ))
-    else:
+    # if not pressed:  # 如果是松开事件
+    #     return True  # 不记录
+    if not pressed:
         command_list.append((
-            "click",  # 操作模式
-            (x, y, str(button)),  # 分别是鼠标的坐标和按下的按键
-            time.time() - startTime  # 操作距离程序开始运行的秒数
+            "mouse-release",
+            (x, y, str(button)),
+            time.time() - startTime
         ))
+        return True
+    # ? 两次点击同一位置
+    # if mouse_x_old == x and mouse_y_old == y:
+    #     # 如果两次点击的时间间隔小于0.3秒就会判断为双击 否则就是单击
+    #     if time.time() - mouse_t_old > 0.3:  # * 单击
+    #         command_list.append((
+    #             "click",  # 操作模式
+    #             (x, y, str(button)),  # 分别是鼠标的坐标和按下的按键
+    #             time.time() - startTime  # 操作距离程序开始运行的秒数
+    #         ))
+    #     else:  # * 双击
+    #         command_list.pop(0)  # 删除前一个
+    #         command_list.append((
+    #             "double-click",  # 操作模式
+    #             (x, y, str(button)),  # 分别是鼠标的坐标和按下的按键
+    #             time.time() - startTime  # 操作距离程序开始运行的秒数
+    #         ))
+    # else:
+    command_list.append((
+        "click",  # 操作模式
+        (x, y, str(button)),  # 分别是鼠标的坐标和按下的按键
+        time.time() - startTime  # 操作距离程序开始运行的秒数
+    ))
     mouse_x_old = x
     mouse_y_old = y
     mouse_t_old = time.time()
@@ -120,6 +151,14 @@ def start_mouse_listen():
     # 进行监听
     with pynput.mouse.Listener(on_click=on_mouse_click) as listener:
         listener.join()
+
+
+# def start_mouse_listen():
+#     """用于开始鼠标的监听
+#     """
+#     with pynput.mouse.Listener(on_press=on_mouse_press,
+#                                on_release=on_mouse_release) as listener:
+#         listener.join()
 
 
 def toFile(command_list: list, path: str):
@@ -192,22 +231,24 @@ def ExecuteCommandsFile(path):
             # 将鼠标移动到记录中的位置
             mouse.position = (command[1][0], command[1][1])
             # 等待一下
-            time.sleep(0.1)
+            # time.sleep(0.1)
             # 点击
             # mouse.click(buttons[command[1][2]])
             mouse.press(buttons[command[1][2]])
-            time.sleep(command[2] * 0.1)
+            # pre_time = command[2]
+        elif command[0] == "mouse-release":
+            # time.sleep(0.1)
             mouse.release(buttons[command[1][2]])
         # * 如果是双击
-        elif command[0] == "double-click":
-            # 将鼠标移动到记录中的位置
-            mouse.position = (command[1][0], command[1][1])
-            # 等待一下
-            time.sleep(0.1)
-            # 双击
-            mouse.click(buttons[command[1][2]], 2)
+        # elif command[0] == "double-click":
+        #     # 将鼠标移动到记录中的位置
+        #     mouse.position = (command[1][0], command[1][1])
+        #     # 等待一下
+        #     # time.sleep(0.1)
+        #     # 双击
+        #     mouse.click(buttons[command[1][2]], 2)
         # * 如果是按键按下
-        elif command[0] == "press":
+        elif command[0] == "key-press":
             # 如果是特殊按键,会记录成Key.xxx,这里判断是不是特殊按键
             if command[1][0][:3] == "Key":
                 # 按下按键
@@ -222,7 +263,7 @@ def ExecuteCommandsFile(path):
                 # keyboard.press(command[1][0].split("'")[1])
                 keyboard.press(command[1][0])
         # * 如果是按键释放
-        elif command[0] == "release":
+        elif command[0] == "key-release":
             # 如果是特殊按键
             if command[1][0][:3] == "Key":
                 # 按下按键
