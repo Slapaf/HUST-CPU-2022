@@ -2,6 +2,10 @@
 
 20级组原课设团队任务
 
+## 项目展示
+
+https://www.bilibili.com/video/BV1o14y157np/
+
 ## 参考资料
 
 - 视频
